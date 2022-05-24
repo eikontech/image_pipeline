@@ -43,6 +43,8 @@
 #include "image_proc/debayer.hpp"
 #include "image_proc/rectify.hpp"
 
+#include "image_proc/resize.hpp"
+
 int main(int argc, char * argv[])
 {
   // Force flush of the stdout buffer.
@@ -53,20 +55,41 @@ int main(int argc, char * argv[])
   rclcpp::executors::SingleThreadedExecutor exec;
   const rclcpp::NodeOptions options;
 
-  // Debayer component, image_raw -> image_mono, image_color
-  auto debayer_node = std::make_shared<image_proc::DebayerNode>(options);
+  // Resizer component, image_raw -> image_resize
+  auto resizer_node = std::make_shared<image_proc::ResizeNode>(options);
 
-  // Rectify component, image_mono -> image_rect
-  auto rectify_mono_node = std::make_shared<image_proc::RectifyNode>(options);
-
-  // Rectify component, image_color -> image_rect_color
-  auto rectify_color_node = std::make_shared<image_proc::RectifyNode>(options);
-
-  exec.add_node(debayer_node);
-  exec.add_node(rectify_mono_node);
-  exec.add_node(rectify_color_node);
+  exec.add_node(resizer_node);
   exec.spin();
 
   rclcpp::shutdown();
   return 0;
 }
+
+
+// int main(int argc, char * argv[])
+// {
+//   // Force flush of the stdout buffer.
+//   setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+//   rclcpp::init(argc, argv);
+
+//   rclcpp::executors::SingleThreadedExecutor exec;
+//   const rclcpp::NodeOptions options;
+
+//   // Debayer component, image_raw -> image_mono, image_color
+//   auto debayer_node = std::make_shared<image_proc::DebayerNode>(options);
+
+//   // Rectify component, image_mono -> image_rect
+//   auto rectify_mono_node = std::make_shared<image_proc::RectifyNode>(options);
+
+//   // Rectify component, image_color -> image_rect_color
+//   auto rectify_color_node = std::make_shared<image_proc::RectifyNode>(options);
+
+//   exec.add_node(debayer_node);
+//   exec.add_node(rectify_mono_node);
+//   exec.add_node(rectify_color_node);
+//   exec.spin();
+
+//   rclcpp::shutdown();
+//   return 0;
+// }

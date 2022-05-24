@@ -70,7 +70,7 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
           filename_ = parameter.as_string();
           RCLCPP_INFO(get_logger(), "Reset filename as '%s'", filename_.c_str());
           ImagePublisher::onInit();
-          return result;
+          // return result;
         } else if (parameter.get_name() == "flip_horizontal") {
           flip_horizontal_ = parameter.as_bool();
           RCLCPP_INFO(get_logger(), "Reset flip_horizontal as '%d'", flip_horizontal_);

@@ -16,6 +16,8 @@ ament_auto_find_build_dependencies()
 find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 message(STATUS "opencv version ${OpenCV_VERSION}")
 
+find_package(std_msgs REQUIRED)
+
 ament_auto_add_library(image_publisher SHARED src/image_publisher.cpp)
 target_link_libraries(image_publisher ${OpenCV_LIBRARIES})
 rclcpp_components_register_nodes(image_publisher "${PROJECT_NAME}::ImagePublisher")

@@ -39,6 +39,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <string>
 
+#include "std_msgs/msg/header.hpp"
+
+
 namespace image_publisher
 {
 
@@ -73,6 +76,10 @@ private:
   bool flip_image_;
   int flip_value_;
   sensor_msgs::msg::CameraInfo camera_info_;
+
+  std::atomic<bool> start_;
+  rclcpp::Publisher<std_msgs::msg::Header>::SharedPtr pub_start_header_;
+
 };
 
 }  // namespace image_publisher

@@ -49,6 +49,7 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
 : Node("ImagePublisher", options)
 {
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  pub_start_header_ = this->create_publisher<std_msgs::msg::Header>("start_header", 1);
 
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);
   flip_vertical_ = this->declare_parameter("flip_vertical", false);
@@ -132,6 +133,7 @@ void ImagePublisher::doWork()
     if (cap_.isOpened()) {
       if (!cap_.read(image_)) {
         cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
+        start_ = true;
       }
     }
     if (flip_image_) {
@@ -146,6 +148,17 @@ void ImagePublisher::doWork()
     camera_info_.header.stamp = out_img->header.stamp;
 
     pub_.publish(*out_img, camera_info_);
+
+    if (pub_start_header_->get_subscription_count() > 0) {
+      if (start_) {
+        std_msgs::msg::Header start_header;
+        start_header.frame_id =  out_img->header.frame_id;
+        start_header.stamp =  out_img->header.stamp;
+        pub_start_header_->publish(start_header);
+        start_ = false;
+      }
+    }
+
   } catch (cv::Exception & e) {
     RCLCPP_ERROR(
       this->get_logger(), "Image processing error: %s %s %s %i",
@@ -212,6 +225,8 @@ void ImagePublisher::onInit()
   camera_info_.r = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   camera_info_.p = {1, 0, static_cast<float>(camera_info_.width / 2), 0, 0, 1,
     static_cast<float>(camera_info_.height / 2), 0, 0, 0, 1, 0};
+  
+  start_ = true;
 
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),

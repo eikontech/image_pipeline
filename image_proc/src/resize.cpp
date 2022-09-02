@@ -47,111 +47,127 @@
 namespace image_proc
 {
 
-ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
-: rclcpp::Node("ResizeNode", options)
-{
-  // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this, "resize");
-  // Create image sub
-  sub_image_ = image_transport::create_camera_subscription(
-    this, "image",
-    std::bind(
-      &ResizeNode::imageCb, this,
-      std::placeholders::_1,
-      std::placeholders::_2), "raw");
+  ResizeNode::ResizeNode(const rclcpp::NodeOptions &options)
+      : rclcpp::Node("ResizeNode", options)
+  {
+    // Create image pub
+    pub_image_ = image_transport::create_camera_publisher(this, "resize");
+    // Create image sub
+    sub_image_ = image_transport::create_camera_subscription(
+        this, "image",
+        std::bind(
+            &ResizeNode::imageCb, this,
+            std::placeholders::_1,
+            std::placeholders::_2),
+        "raw");
 
-  interpolation_ = this->declare_parameter("interpolation", 1);
-  use_scale_ = this->declare_parameter("use_scale", true);
-  scale_height_ = this->declare_parameter("scale_height", 1.0);
-  scale_width_ = this->declare_parameter("scale_width", 1.0);
-  height_ = this->declare_parameter("height", -1);
-  width_ = this->declare_parameter("width", -1);
-}
+    interpolation_ = this->declare_parameter("interpolation", 1);
+    use_scale_ = this->declare_parameter("use_scale", true);
+    scale_height_ = this->declare_parameter("scale_height", 1.0);
+    scale_width_ = this->declare_parameter("scale_width", 1.0);
+    height_ = this->declare_parameter("height", -1);
+    width_ = this->declare_parameter("width", -1);
+  }
 
-void ResizeNode::imageCb(
-  sensor_msgs::msg::Image::ConstSharedPtr image_msg,
-  sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
-{
-  // getNumSubscribers has a bug/doesn't work
-  // Eventually revisit and figure out how to make this work
-  // if (pub_image_.getNumSubscribers() < 1) {
-  //  return;
-  //}
+  void ResizeNode::imageCb(
+      sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+      sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
+  {
+    // getNumSubscribers has a bug/doesn't work
+    // Eventually revisit and figure out how to make this work
+    // if (pub_image_.getNumSubscribers() < 1) {
+    //  return;
+    //}
 
-  TRACEPOINT(
-    image_proc_resize_init,
-    static_cast<const void *>(this),
-    static_cast<const void *>(&(*image_msg)),
-    static_cast<const void *>(&(*info_msg)));
-
-  cv_bridge::CvImagePtr cv_ptr;
-
-  try {
-    cv_ptr = cv_bridge::toCvCopy(image_msg);
-  } catch (cv_bridge::Exception & e) {
     TRACEPOINT(
-      image_proc_resize_fini,
-      static_cast<const void *>(this),
-      static_cast<const void *>(&(*image_msg)),
-      static_cast<const void *>(&(*info_msg)));
-    RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
-    return;
+        image_proc_resize_init,
+        static_cast<const void *>(this),
+        static_cast<const void *>(&(*image_msg)),
+        static_cast<const void *>(&(*info_msg)));
+
+    cv_bridge::CvImagePtr cv_ptr;
+
+    try
+    {
+      cv_ptr = cv_bridge::toCvCopy(image_msg);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+      TRACEPOINT(
+          image_proc_resize_fini,
+          static_cast<const void *>(this),
+          static_cast<const void *>(&(*image_msg)),
+          static_cast<const void *>(&(*info_msg)));
+      RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
+      return;
+    }
+
+    if (cv_ptr->image.empty())
+    {
+      RCLCPP_WARN(this->get_logger(), "cv_image is empty!");
+      return;
+    }
+
+    if (use_scale_)
+    {
+      cv::resize(
+          cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_,
+          scale_height_, interpolation_);
+    }
+    else
+    {
+      int height = height_ == -1 ? image_msg->height : height_;
+      int width = width_ == -1 ? image_msg->width : width_;
+      cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
+    }
+
+    sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
+        std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
+
+    double scale_y;
+    double scale_x;
+
+    if (use_scale_)
+    {
+      scale_y = scale_height_;
+      scale_x = scale_width_;
+      dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
+      dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
+    }
+    else
+    {
+      scale_y = static_cast<double>(height_) / info_msg->height;
+      scale_x = static_cast<double>(width_) / info_msg->width;
+      dst_info_msg->height = height_;
+      dst_info_msg->width = width_;
+    }
+
+    dst_info_msg->k[0] = dst_info_msg->k[0] * scale_x; // fx
+    dst_info_msg->k[2] = dst_info_msg->k[2] * scale_x; // cx
+    dst_info_msg->k[4] = dst_info_msg->k[4] * scale_y; // fy
+    dst_info_msg->k[5] = dst_info_msg->k[5] * scale_y; // cy
+
+    dst_info_msg->p[0] = dst_info_msg->p[0] * scale_x; // fx
+    dst_info_msg->p[2] = dst_info_msg->p[2] * scale_x; // cx
+    dst_info_msg->p[3] = dst_info_msg->p[3] * scale_x; // T
+    dst_info_msg->p[5] = dst_info_msg->p[5] * scale_y; // fy
+    dst_info_msg->p[6] = dst_info_msg->p[6] * scale_y; // cy
+
+    dst_info_msg->roi.x_offset = static_cast<int>(dst_info_msg->roi.x_offset * scale_x);
+    dst_info_msg->roi.y_offset = static_cast<int>(dst_info_msg->roi.y_offset * scale_y);
+    dst_info_msg->roi.width = static_cast<int>(dst_info_msg->roi.width * scale_x);
+    dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
+
+    pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
+
+    TRACEPOINT(
+        image_proc_resize_fini,
+        static_cast<const void *>(this),
+        static_cast<const void *>(&(*image_msg)),
+        static_cast<const void *>(&(*info_msg)));
   }
 
-  if (use_scale_) {
-    cv::resize(
-      cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_,
-      scale_height_, interpolation_);
-  } else {
-    int height = height_ == -1 ? image_msg->height : height_;
-    int width = width_ == -1 ? image_msg->width : width_;
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
-  }
-
-  sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
-    std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
-
-  double scale_y;
-  double scale_x;
-
-  if (use_scale_) {
-    scale_y = scale_height_;
-    scale_x = scale_width_;
-    dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
-    dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
-  } else {
-    scale_y = static_cast<double>(height_) / info_msg->height;
-    scale_x = static_cast<double>(width_) / info_msg->width;
-    dst_info_msg->height = height_;
-    dst_info_msg->width = width_;
-  }
-
-  dst_info_msg->k[0] = dst_info_msg->k[0] * scale_x;  // fx
-  dst_info_msg->k[2] = dst_info_msg->k[2] * scale_x;  // cx
-  dst_info_msg->k[4] = dst_info_msg->k[4] * scale_y;  // fy
-  dst_info_msg->k[5] = dst_info_msg->k[5] * scale_y;  // cy
-
-  dst_info_msg->p[0] = dst_info_msg->p[0] * scale_x;  // fx
-  dst_info_msg->p[2] = dst_info_msg->p[2] * scale_x;  // cx
-  dst_info_msg->p[3] = dst_info_msg->p[3] * scale_x;  // T
-  dst_info_msg->p[5] = dst_info_msg->p[5] * scale_y;  // fy
-  dst_info_msg->p[6] = dst_info_msg->p[6] * scale_y;  // cy
-
-  dst_info_msg->roi.x_offset = static_cast<int>(dst_info_msg->roi.x_offset * scale_x);
-  dst_info_msg->roi.y_offset = static_cast<int>(dst_info_msg->roi.y_offset * scale_y);
-  dst_info_msg->roi.width = static_cast<int>(dst_info_msg->roi.width * scale_x);
-  dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
-
-  pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
-
-  TRACEPOINT(
-    image_proc_resize_fini,
-    static_cast<const void *>(this),
-    static_cast<const void *>(&(*image_msg)),
-    static_cast<const void *>(&(*info_msg)));
-}
-
-}  // namespace image_proc
+} // namespace image_proc
 
 #include "rclcpp_components/register_node_macro.hpp"
 

@@ -48,7 +48,7 @@ using namespace std::chrono_literals;
 ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
 : Node("ImagePublisher", options)
 {
-  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  pub_ = image_transport::create_camera_publisher(this, "image_publisher/image_raw");
   pub_start_header_ = this->create_publisher<std_msgs::msg::Header>("start_header", 1);
 
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);
@@ -90,7 +90,7 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
           RCLCPP_INFO(get_logger(), "Reset publish_rate as '%lf'", publish_rate_);
         } else if (parameter.get_name() == "camera_info_url") {
           camera_info_url_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "Reset camera_info_rul as '%s'", camera_info_url_.c_str());
+          RCLCPP_INFO(get_logger(), "Reset camera_info_url as '%s'", camera_info_url_.c_str());
         }
       }
       ImagePublisher::reconfigureCallback();

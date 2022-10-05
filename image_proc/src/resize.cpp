@@ -51,7 +51,7 @@ namespace image_proc
       : rclcpp::Node("ResizeNode", options)
   {
     // Create image pub
-    pub_image_ = image_transport::create_camera_publisher(this, "resize");
+    pub_image_ = image_transport::create_camera_publisher(this, "resize/image");
     // Create image sub
     sub_image_ = image_transport::create_camera_subscription(
         this, "image",

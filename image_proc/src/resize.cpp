@@ -54,7 +54,7 @@ namespace image_proc
     pub_image_ = image_transport::create_camera_publisher(this, "resize/image");
     // Create image sub
     sub_image_ = image_transport::create_camera_subscription(
-        this, "image",
+        this, "image/image",
         std::bind(
             &ResizeNode::imageCb, this,
             std::placeholders::_1,

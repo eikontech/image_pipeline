@@ -48,7 +48,7 @@ using namespace std::chrono_literals;
 ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
 : Node("ImagePublisher", options)
 {
-  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  pub_ = image_transport::create_camera_publisher(this, "image/image_raw");
   pub_start_header_ = this->create_publisher<std_msgs::msg::Header>("start_header", 1);
 
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);

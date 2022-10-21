@@ -62,7 +62,7 @@ def generate_launch_description():
             ],
         remappings=[('image/image', 'image/image_raw'),
                     ('resize/image', image_value),
-                    ('camera_info', camera_info_value)]
+                    ('resize/camera_info', camera_info_value)]
     )
 
     l_info_device_value = LogInfo(msg="Device value {}".format(device_value))
@@ -75,8 +75,6 @@ def generate_launch_description():
                     {"publish_rate": publish_rate_name},
                     {"camera_info_url": camera_info_url_name},
                     ],
-        remappings=[#('image_raw', 'publisher_out'),
-                    ('camera_info', camera_info_value)]
     )
 
     return LaunchDescription([

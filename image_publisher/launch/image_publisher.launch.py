@@ -59,5 +59,5 @@ def generate_launch_description():
                         {"camera_info_url": camera_info_url_name},
                         ],
             remappings=[('image/image_raw', image_value),
-                        ('camera_info', camera_info_value)]),
+                        ('image/camera_info', camera_info_value)]),
     ])

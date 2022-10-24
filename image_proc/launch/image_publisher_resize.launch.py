@@ -48,7 +48,7 @@ def generate_launch_description():
     frame_id_value = LaunchConfiguration('frame_id', default="camera")
     logger_name = LaunchConfiguration("log_level", default="info")
     camera_info_url_name = LaunchConfiguration("camera_info_url", default="ost.yaml")
-    publish_rate_name = LaunchConfiguration("publish_rate", default='3.')
+    publish_rate_name = LaunchConfiguration("publish_rate", default='25.')
 
     image_proc = launch_ros.actions.Node(
         package='image_proc', executable='image_proc', output='screen',

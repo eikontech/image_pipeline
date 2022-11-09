@@ -49,6 +49,8 @@ def generate_launch_description():
     logger_name = LaunchConfiguration("log_level", default="info")
     camera_info_url_name = LaunchConfiguration("camera_info_url", default="ost.yaml")
     publish_rate_name = LaunchConfiguration("publish_rate", default='25.')
+    frame_height_name = LaunchConfiguration("frame_height", default='480')
+    frame_width_name = LaunchConfiguration("frame_width", default='640')
 
     image_proc = launch_ros.actions.Node(
         package='image_proc', executable='image_proc', output='screen',
@@ -56,8 +58,8 @@ def generate_launch_description():
         namespace=namespace_value,
         parameters=[
             # {"height": 360},
-            {"height": 480},
-            {"width": 640},
+            {"height": frame_height_name},
+            {"width": frame_width_name},
             {"use_scale": False},
             ],
         remappings=[('image/image', 'image/image_raw'),

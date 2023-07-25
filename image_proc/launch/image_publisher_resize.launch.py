@@ -57,7 +57,6 @@ def generate_launch_description():
         arguments=['--ros-args', '--log-level', logger_name],
         namespace=namespace_value,
         parameters=[
-            # {"height": 360},
             {"height": frame_height_name},
             {"width": frame_width_name},
             {"use_scale": False},

@@ -43,6 +43,8 @@ def generate_launch_description():
 
     namespace_value = LaunchConfiguration('namespace', default='')
     image_value = LaunchConfiguration('image', default='image_raw')
+    image_compressed_value = LaunchConfiguration('image', default=[image_value, '/compressed'])
+    image_republished_value = LaunchConfiguration('image_republished', default=[image_compressed_value, '/republished'])
     device_value = LaunchConfiguration('device', default='0')
     camera_info_value = LaunchConfiguration('camera_info', default='camera_info')
     frame_id_value = LaunchConfiguration('frame_id', default="camera")
@@ -65,7 +67,7 @@ def generate_launch_description():
                     ('resize/image', image_value),
                     ('resize/camera_info', camera_info_value)]
     )
-
+    
     l_info_device_value = LogInfo(msg="Device value {}".format(device_value))
 
     publisher = launch_ros.actions.Node(
@@ -77,9 +79,22 @@ def generate_launch_description():
                     {"camera_info_url": camera_info_url_name},
                     ],
     )
+    
+    republish_cmd = launch_ros.actions.Node(
+        package='image_transport',
+        executable='republish',
+        name='image_republisher',
+        output='screen',
+        namespace=namespace_value,
+        arguments=['compressed'],
+        remappings=[
+            ('in/compressed', image_compressed_value),
+            ('out/compressed', image_republished_value)]
+    )
 
     return LaunchDescription([
         l_info_device_value,
         publisher,
         image_proc,
+        republish_cmd
     ])

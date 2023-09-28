@@ -43,7 +43,7 @@ def generate_launch_description():
 
     namespace_value = LaunchConfiguration('namespace', default='')
     image_value = LaunchConfiguration('image', default='image_raw')
-    image_compressed_value = LaunchConfiguration('image', default=[image_value, '/compressed'])
+    image_compressed_value = LaunchConfiguration('image_compressed', default=[image_value, '/compressed'])
     image_republished_value = LaunchConfiguration('image_republished', default=[image_compressed_value, '/republished'])
     device_value = LaunchConfiguration('device', default='0')
     camera_info_value = LaunchConfiguration('camera_info', default='camera_info')
